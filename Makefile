@@ -1,14 +1,27 @@
 include Makefile.inc
 -include local.make
 
-.PHONY = jupyter-env packages freeze environment start stop clean
+.PHONY = jupyter-env packages freeze environment start stop clean help
 
-.DEFAULT_GOAL := run
+.DEFAULT_GOAL := help
 
 # Macro to activate the virtual environment.  Used throughout the build to
 # activate the environment for sub-shells before running any commands that
 # need to work within the virtual environment.
 ACTIVATE = . jupyter-env/bin/activate
+
+help:
+	@echo "Usage: make [target]"
+	@echo
+	@echo "Targets:"
+	@echo "  environment   Creates a Python virtualenv with all of the packages"
+	@echo "                from requirements.txt."
+	@echo "  freeze        Generates frozen.txt which contains a listing of all"
+	@echo "                of the packages and their installed version."
+	@echo "  start         Starts the jupyter notebook environment."
+	@echo "  stop          Stops a currently running jupyter notebook environment."
+	@echo "  clean         Removes the Python virtualenv."
+	@echo 
 
 jupyter-env:
 	virtualenv --python=$(PYTHON) jupyter-env; \
