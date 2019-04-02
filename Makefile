@@ -1,58 +1,53 @@
 include Makefile.inc
 -include local.make
 
-.PHONY = jupyter-env packages freeze environment start stop clean help
+.PHONY = jupyter-env deeplearning-env environments start stop help
 
 .DEFAULT_GOAL := help
-
-# Macro to activate the virtual environment.  Used throughout the build to
-# activate the environment for sub-shells before running any commands that
-# need to work within the virtual environment.
-ACTIVATE = . jupyter-env/bin/activate
 
 help:
 	@echo "Usage: make [target]"
 	@echo
 	@echo "Targets:"
-	@echo "  environment   Creates a Python virtualenv with all of the packages"
-	@echo "                from requirements.txt."
-	@echo "  freeze        Generates frozen.txt which contains a listing of all"
-	@echo "                of the packages and their installed version."
-	@echo "  start         Starts the jupyter notebook environment."
-	@echo "  stop          Stops a currently running jupyter notebook environment."
-	@echo "  clean         Removes the Python virtualenv."
+	@echo "  environments   Creates the Conda Environments with all of the packages"
+	@echo "                 from the appropriate requirements.txt."
+	@echo "  start          Starts the jupyter notebook environment."
+	@echo "  stop           Stops a currently running jupyter notebook environment."
 	@echo 
 
-jupyter-env:
-	virtualenv --python=$(PYTHON) jupyter-env; \
+jupyter-env: jupyter-env/requirements.txt
+	$(CONDA); \
+	conda env list | grep "$@" > /dev/null; \
+	if [[ $$? -ne 0 ]]; then \
+		conda create -y -n "$@"; \
+	fi; \
+	conda activate "$@"; \
+	conda install -y --file "$<"
 
-packages: jupyter-env requirements.txt
-	$(ACTIVATE); \
-	pip install -r requirements.txt
-
-# Generates a list of packages that are installed and their versions.  This
-# is useful for storing the list of packages in the environment _before_ 
-# tearing it down.
-frozen.txt freeze: jupyter-env
-	$(ACTIVATE); \
-	pip freeze > frozen.txt
+deeplearning-env: deeplearning-env/requirements.txt
+	$(CONDA); \
+	conda env list | grep "$@" > /dev/null; \
+	if [[ $$? -ne 0 ]]; then \
+		conda create -y -n "$(basename $(dirname $@))"; \
+	fi; \
+	conda activate "$@"; \
+	conda install -y --file "$<"
 
 # Virtual target for a fully installed and working environment and default
 # set of packages.
-environment: jupyter-env packages
+environments: jupyter-env deeplearning-env
 
 # Creates the notebook directory if it doesn't already exist.
 $(NOTEBOOK_DIR):
 	mkdir -p $(NOTEBOOK_DIR)
 
 # Starts the notebook server.
-start: environment $(NOTEBOOK_DIR)
-	$(ACTIVATE); \
+start: environments $(NOTEBOOK_DIR)
+	$(CONDA); \
+	conda activate jupyter-env; \
 	jupyter notebook --notebook-dir="$(NOTEBOOK_DIR)"
 
 stop: 
-	$(ACTIVATE); \
+	$(CONDA); \
+	conda activate jupyter-env; \
 	jupyter notebook stop
-
-clean:
-	rm -rf jupyter-env
